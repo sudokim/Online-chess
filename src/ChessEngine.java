@@ -3,26 +3,32 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ChessEngine {
 
-    enum ChessColors {
+    enum ChessColorType {
         White, Black
+    }
+
+    enum ChessPieceType {
+        Rook, Knight, Bishop, Queen, King, Pawn
     }
 
     // Chess GUI
     public ChessGUI GUI = new ChessGUI(this);
 
     // Variables
-    public ChessColors currentTurnColor;
-    public int         currentTurnCount;
-    public boolean     isGameRunning = false;
-    public boolean     isOnlineGame;
+    public ChessColorType currentTurnColor;
+    public int            currentTurnCount;
+    public boolean        isGameRunning = false;
+    public boolean        isOnlineGame;
 
     public boolean          isPieceSelected;
     public Piece            selectedPiece;
     public Set<Coordinates> possibleDestinations;
+
+    King whiteKing;
+    King blackKing;
 
     // Map of pieces
     public Map<Coordinates, Piece> pieces;
@@ -31,7 +37,7 @@ public class ChessEngine {
     public void newLocalGame() {
         initBoard();
 
-        currentTurnColor = ChessColors.White;
+        currentTurnColor = ChessColorType.White;
         currentTurnCount = 1;
         isGameRunning    = true;
         isOnlineGame     = false;
@@ -49,12 +55,12 @@ public class ChessEngine {
         pieces = new HashMap<>(33);
 
         // Black
-        initFirstRow(ChessColors.Black, 0);
-        initPawns(ChessColors.Black, 1);
+        initFirstRow(ChessColorType.Black, 0);
+        initPawns(ChessColorType.Black, 1);
 
         // White
-        initFirstRow(ChessColors.White, 7);
-        initPawns(ChessColors.White, 6);
+        initFirstRow(ChessColorType.White, 7);
+        initPawns(ChessColorType.White, 6);
 
         GUI.clearPieces();
         for (Piece piece : pieces.values()) {
@@ -62,7 +68,7 @@ public class ChessEngine {
         }
     }
 
-    private void initFirstRow(ChessColors color, int row) {
+    private void initFirstRow(ChessColorType color, int row) {
         Coordinates pos;
 
         pos = new Coordinates(row, 0);
@@ -78,7 +84,10 @@ public class ChessEngine {
         pieces.put(pos, new Queen(color, pos));
 
         pos = new Coordinates(row, 4);
-        pieces.put(pos, new King(color, pos));
+        King newKing = new King(color, pos);
+        if (color == ChessColorType.Black) blackKing = newKing;
+        else whiteKing = newKing;
+        pieces.put(pos, newKing);
 
         pos = new Coordinates(row, 5);
         pieces.put(pos, new Bishop(color, pos));
@@ -91,7 +100,7 @@ public class ChessEngine {
 
     }
 
-    private void initPawns(ChessColors color, int row) {
+    private void initPawns(ChessColorType color, int row) {
         Coordinates pos;
 
         for (int col = 0; col < 8; col++) {
@@ -135,12 +144,21 @@ public class ChessEngine {
     }
 
     private void movePiece(Coordinates src, Coordinates dest) {
-        Piece piece = pieces.get(src);
+        Piece srcPiece  = pieces.get(src);
+        Piece destPiece = pieces.get(dest);
 
-        piece.hasMoved = true;
-        piece.pos      = dest;
+        if ((destPiece == blackKing) || (destPiece == whiteKing)) {
+            // King dead
+            isGameRunning = false;
+            GUI.gameEnded(currentTurnColor);
+            return;
+        }
 
-        pieces.put(dest, piece);
+        srcPiece.hasMoved = true;
+        srcPiece.pos      = dest;
+
+        if (dest != null) pieces.remove(dest);
+        pieces.put(dest, srcPiece);
         pieces.remove(src);
     }
 
@@ -149,27 +167,31 @@ public class ChessEngine {
         isPieceSelected = false;
         selectedPiece   = null;
 
-        if (currentTurnColor == ChessColors.White) {
-            currentTurnColor = ChessColors.Black;
-        } else {
-            currentTurnCount++;
-            currentTurnColor = ChessColors.White;
-        }
+        if (isGameRunning) {
+            if (currentTurnColor == ChessColorType.White) {
+                currentTurnColor = ChessColorType.Black;
+            } else {
+                currentTurnCount++;
+                currentTurnColor = ChessColorType.White;
+            }
 
-        GUI.enableButtonsForCurrentTurn();
-        GUI.updateGameStatusLabels();
+            GUI.enableButtonsForCurrentTurn();
+            GUI.updateGameStatusLabels();
+        }
     }
 
 
     public abstract class Piece {
-        ChessColors color;
-        Coordinates pos;
-        String      icon;
-        boolean     hasMoved = false;
+        public  ChessColorType color;
+        public  Coordinates    pos;
+        public  String         icon;
+        public  boolean        hasMoved = false;
+        private int            id;  // Unique id given by the start position
 
-        Piece(ChessColors color, Coordinates pos) {
+        Piece(ChessColorType color, Coordinates pos) {
             this.color = color;
             this.pos   = pos;
+            this.id    = pos.hashCode();
         }
 
         /**
@@ -178,8 +200,12 @@ public class ChessEngine {
          * @return Piece information in string
          */
         public String toString() {
-            return (this.color == ChessColors.Black ? "Black " : "White ") + this.getClass().getSimpleName()
+            return (this.color == ChessColorType.Black ? "Black " : "White ") + this.getClass().getSimpleName()
                    + " at " + this.pos;
+        }
+
+        public int hashCode() {
+            return this.id;
         }
 
         /**
@@ -230,9 +256,9 @@ public class ChessEngine {
     }
 
     public class Rook extends Piece {
-        Rook(ChessColors color, Coordinates pos) {
+        Rook(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♜" : "♖");
+            this.icon = (this.color == ChessColorType.Black ? "♜" : "♖");
         }
 
         @Override
@@ -261,9 +287,9 @@ public class ChessEngine {
             new Coordinates(1, 2)
         );
 
-        Knight(ChessColors color, Coordinates pos) {
+        Knight(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♞" : "♘");
+            this.icon = (this.color == ChessColorType.Black ? "♞" : "♘");
         }
 
         @Override
@@ -273,9 +299,9 @@ public class ChessEngine {
     }
 
     public class Bishop extends Piece {
-        Bishop(ChessColors color, Coordinates pos) {
+        Bishop(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♝" : "♗");
+            this.icon = (this.color == ChessColorType.Black ? "♝" : "♗");
         }
 
         @Override
@@ -292,9 +318,9 @@ public class ChessEngine {
     }
 
     public class Queen extends Piece {
-        Queen(ChessColors color, Coordinates pos) {
+        Queen(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♛" : "♕");
+            this.icon = (this.color == ChessColorType.Black ? "♛" : "♕");
         }
 
         @Override
@@ -327,9 +353,9 @@ public class ChessEngine {
             new Coordinates(1, 1)
         );
 
-        King(ChessColors color, Coordinates pos) {
+        King(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♚" : "♔");
+            this.icon = (this.color == ChessColorType.Black ? "♚" : "♔");
         }
 
         @Override
@@ -339,9 +365,9 @@ public class ChessEngine {
     }
 
     public class Pawn extends Piece {
-        Pawn(ChessColors color, Coordinates pos) {
+        Pawn(ChessColorType color, Coordinates pos) {
             super(color, pos);
-            this.icon = (this.color == ChessColors.Black ? "♟" : "♙");
+            this.icon = (this.color == ChessColorType.Black ? "♟" : "♙");
         }
 
         private boolean isWithinRangeAndEmpty(Coordinates coords) {
@@ -358,22 +384,22 @@ public class ChessEngine {
             Set<Coordinates> result = new HashSet<>(4);
 
             // Vertical move
-            if (color == ChessColors.Black){
+            if (color == ChessColorType.Black) {
                 // Move down
                 if (!hasMoved) {
-                    if (isWithinRangeAndEmpty(pos.add(2, 0))) result.add(pos.add(2,0));
+                    if (isWithinRangeAndEmpty(pos.add(2, 0))) result.add(pos.add(2, 0));
                 }
-                if (isWithinRangeAndEmpty(pos.add(1, 0))) result.add(pos.add(1,0));
+                if (isWithinRangeAndEmpty(pos.add(1, 0))) result.add(pos.add(1, 0));
             } else {
                 // Move up
                 if (!hasMoved) {
-                    if (isWithinRangeAndEmpty(pos.add(-2,0))) result.add(pos.add(-2, 0));
+                    if (isWithinRangeAndEmpty(pos.add(-2, 0))) result.add(pos.add(-2, 0));
                 }
-                if (isWithinRangeAndEmpty(pos.add(-1, 0))) result.add(pos.add(-1,0));
+                if (isWithinRangeAndEmpty(pos.add(-1, 0))) result.add(pos.add(-1, 0));
             }
 
             // Diagonal move
-            int d_row = color == ChessColors.Black ? 1 : -1;
+            int d_row = color == ChessColorType.Black ? 1 : -1;
             if (isWithinRangeAndHasEnemy(pos.add(d_row, -1))) result.add(pos.add(d_row, -1));
             if (isWithinRangeAndHasEnemy(pos.add(d_row, 1))) result.add(pos.add(d_row, 1));
 

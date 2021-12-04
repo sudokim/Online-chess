@@ -27,7 +27,7 @@ class ChessGUI extends JFrame {
          * @param coords Coordinates of the pawn
          * @param color  Color of the pawn
          */
-        PawnPromotionDialog(Coordinates coords, ChessEngine.ChessColors color) {
+        PawnPromotionDialog(Coordinates coords, ChessEngine.ChessColorType color) {
             super(ChessGUI.this, "Promote Pawn");
 
             this.setLayout(new GridLayout(2, 1));
@@ -37,39 +37,39 @@ class ChessGUI extends JFrame {
                 Dimension ButtonSize = new Dimension(50, 50);
 
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColors.Black) ? "♛" : "♕");
+                    setText((color == ChessEngine.ChessColorType.Black) ? "♛" : "♕");
                     setToolTipText("Queen");
-                    setFont(buttonFont);
+                    setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColors.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
 
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Queen);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColors.Black) ? "♜" : "♖");
+                    setText((color == ChessEngine.ChessColorType.Black) ? "♜" : "♖");
                     setToolTipText("Rook");
-                    setFont(buttonFont);
+                    setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColors.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Rook);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColors.Black) ? "♞" : "♘");
+                    setText((color == ChessEngine.ChessColorType.Black) ? "♞" : "♘");
                     setToolTipText("Knight");
-                    setFont(buttonFont);
+                    setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColors.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Knight);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColors.Black) ? "♝" : "♗");
+                    setText((color == ChessEngine.ChessColorType.Black) ? "♝" : "♗");
                     setToolTipText("Bishop");
-                    setFont(buttonFont);
+                    setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColors.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Bishop);
                 }});
@@ -106,36 +106,40 @@ class ChessGUI extends JFrame {
     // Constants
 
     // Color for pieces
-    private final Color     colorBlack        = new Color(21, 21, 21);
-    private final Color     colorWhite        = new Color(225, 225, 225);
-    private final Color     colorDestinations = new Color(90, 109, 126);
-    // Size of indicators
-    private final Dimension indicatorSize     = new Dimension(100, 20);
+    private final Color     colorBlack            = new Color(21, 21, 21);
+    private final Color     colorWhite            = new Color(225, 225, 225);
+    private final Color     colorDestinations     = new Color(90, 109, 126);
     // Size of button
-    private final Dimension ButtonSize        = new Dimension(50, 50);
+    private final Dimension sizeButton            = new Dimension(50, 50);
     // Font size of button
-    private final int       buttonFontSize    = 30;
+    private final int       sizeButtonFont        = 30;
     // Size of window
-    private final Dimension windowSize        = new Dimension(520, 550);
-    // Size of number label and alphabet label
-    private final Dimension numberLabelSize   = new Dimension(20, 50);
-    private final Dimension alphabetLabelSize = new Dimension(50, 20);
-    private final Font      buttonFont        = new Font("Monospaced", Font.PLAIN, 36);
+    private final Dimension sizeWindow            = new Dimension(520, 550);
+    // Size of labels
+    private final Dimension sizeIndicatorLabel    = new Dimension(100, 20);
+    private final Dimension sizeNumberLabel       = new Dimension(20, 50);
+    private final Dimension sizeAlphabetLabel     = new Dimension(50, 20);
+    private final Dimension sizePopupMessageLabel = new Dimension(500, 20);
+    private final Font      fontButton            = new Font(Font.MONOSPACED, Font.PLAIN, 36);
+    private final Font      fontPopupMessageTitle = new Font(Font.DIALOG, Font.BOLD, 18);
 
     // Variables
 
     // Chess engine
-    private final ChessEngine                  chessEngine;
+    private final ChessEngine      chessEngine;
     // Main panel
-    private final JPanel                       mainPanel             = new JPanel(new GridBagLayout());
+    private final JPanel           panelMain               = new JPanel(new GridBagLayout());
     // Turn indicator
-    private final JLabel                       turnIndicator         = new JLabel();
+    private final JLabel           labelTurnColorIndicator = new JLabel();
     // Turn count indicator
-    private final JLabel                       turnCountIndicator    = new JLabel();
+    private final JLabel           labelTurnCountIndicator = new JLabel();
+    // Popup message title and body
+    private final JLabel           labelPopupMessageTitle  = new JLabel();
+    private final JLabel           labelPopupMessageBody   = new JLabel();
     // Array of buttons
-    private final JButton[][]                  buttons               = new JButton[8][8];
+    private final JButton[][]      buttons                 = new JButton[8][8];
     // Activated buttons for destinations
-    private final Set<Coordinates> activatedDestinations = new HashSet<>();
+    private final Set<Coordinates> activatedDestinations   = new HashSet<>();
 
 
     ChessGUI(ChessEngine game) {
@@ -143,26 +147,26 @@ class ChessGUI extends JFrame {
         chessEngine = game;
 
         // Draw board
-        turnIndicator.setPreferredSize(new Dimension(this.indicatorSize));
-        turnIndicator.setHorizontalAlignment(SwingConstants.LEFT);
-        turnCountIndicator.setPreferredSize(new Dimension(this.indicatorSize));
-        turnCountIndicator.setHorizontalAlignment(SwingConstants.RIGHT);
+        labelTurnColorIndicator.setPreferredSize(new Dimension(this.sizeIndicatorLabel));
+        labelTurnColorIndicator.setHorizontalAlignment(SwingConstants.LEFT);
+        labelTurnCountIndicator.setPreferredSize(new Dimension(this.sizeIndicatorLabel));
+        labelTurnCountIndicator.setHorizontalAlignment(SwingConstants.RIGHT);
 
         // Add panels to grid
-        addComponentToOGrid(turnIndicator, 0, 0, 3, 1);
-        addComponentToOGrid(turnCountIndicator, 6, 0, 3, 1);
-        addComponentToOGrid(addNumberLabels(), 0, 2, 1, 8);
-        addComponentToOGrid(addAlphabetLabels(), 1, 1, 8, 1);
-        addComponentToOGrid(addPieceButtons(), 1, 2, 8, 8);
-        addComponentToOGrid(addAlphabetLabels(), 1, 10, 8, 1);
-        addComponentToOGrid(addNumberLabels(), 9, 2, 1, 8);
+        addComponentToGrid(labelTurnColorIndicator, 0, 0, 3, 1);
+        addComponentToGrid(labelTurnCountIndicator, 6, 0, 3, 1);
+        addComponentToGrid(addNumberLabels(), 0, 2, 1, 8);
+        addComponentToGrid(addAlphabetLabels(), 1, 1, 8, 1);
+        addComponentToGrid(addPieceButtons(), 1, 2, 8, 8);
+        addComponentToGrid(addAlphabetLabels(), 1, 10, 8, 1);
+        addComponentToGrid(addNumberLabels(), 9, 2, 1, 8);
 
         // Window settings
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(mainPanel);
+        panelMain.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        add(panelMain);
         setJMenuBar(addMenuBar());
         setTitle("Online Chess");
-        setSize(this.windowSize);
+        setSize(this.sizeWindow);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -188,12 +192,12 @@ class ChessGUI extends JFrame {
                 btn.addActionListener(this::buttonClickHandler);
 
                 btn.setMargin(new Insets(0, 0, 0, 0));
-                btn.setFont(new Font("Monospaced", Font.PLAIN, buttonFontSize));
+                btn.setFont(new Font("Monospaced", Font.PLAIN, sizeButtonFont));
                 btn.setBackground((row + col) % 2 == 0 ? new Color(161, 127, 114) : new Color(119, 89, 72));
                 btn.setBorderPainted(false);
                 btn.setEnabled(false);
                 btn.setHorizontalAlignment(SwingConstants.CENTER);
-                btn.setPreferredSize(new Dimension(50, 50));
+                btn.setPreferredSize(sizeButton);
 
                 board.add(btn);
             }
@@ -213,7 +217,7 @@ class ChessGUI extends JFrame {
 
         for (int i = 8; i >= 1; i--) {
             lbl = new JLabel(String.valueOf(i), SwingConstants.CENTER);
-            lbl.setPreferredSize(this.numberLabelSize);
+            lbl.setPreferredSize(this.sizeNumberLabel);
             panel.add(lbl);
         }
 
@@ -229,7 +233,7 @@ class ChessGUI extends JFrame {
 
         for (int i = 0; i < 8; i++) {
             lbl = new JLabel(String.valueOf((char) (i + 'a')), SwingConstants.CENTER);
-            lbl.setPreferredSize(this.alphabetLabelSize);
+            lbl.setPreferredSize(this.sizeAlphabetLabel);
             panel.add(lbl);
         }
 
@@ -297,7 +301,7 @@ class ChessGUI extends JFrame {
      * @param width  width of the object
      * @param height height of the object
      */
-    private void addComponentToOGrid(JComponent obj, int x, int y, int width, int height) {
+    private void addComponentToGrid(JComponent obj, int x, int y, int width, int height) {
         GridBagConstraints c = new GridBagConstraints();
         c.gridx      = x;
         c.gridy      = y;
@@ -305,11 +309,10 @@ class ChessGUI extends JFrame {
         c.gridheight = height;
         c.fill       = GridBagConstraints.BOTH;
 
-        this.mainPanel.add(obj, c);
+        this.panelMain.add(obj, c);
     }
 
-    //
-
+    // Button click listener
     private void buttonClickHandler(ActionEvent l) {
         chessEngine.selectPiece((Coordinates) ((JButton) l.getSource()).getClientProperty("pos"));
     }
@@ -342,7 +345,7 @@ class ChessGUI extends JFrame {
         JButton btn = buttons[piece.pos.row][piece.pos.col];
 
         btn.setText(piece.icon);
-        btn.setForeground(piece.color == ChessEngine.ChessColors.Black ? colorBlack : colorWhite);
+        btn.setForeground(piece.color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
     }
 
     /**
@@ -425,7 +428,39 @@ class ChessGUI extends JFrame {
      * Update JLabels
      */
     public void updateGameStatusLabels() {
-        turnIndicator.setText("Turn " + chessEngine.currentTurnCount);
-        turnCountIndicator.setText(chessEngine.currentTurnColor.toString() + " Turn");
+        labelTurnColorIndicator.setText("Turn " + chessEngine.currentTurnCount);
+        labelTurnCountIndicator.setText(chessEngine.currentTurnColor.toString() + " Turn");
+    }
+
+    public void gameEnded(ChessEngine.ChessColorType endedBy) {
+        // Disable all buttons
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                buttons[row][col].setEnabled(false);
+            }
+        }
+
+        // Show dialog
+        JOptionPane.showMessageDialog(this,
+                                      "Game ended!\n\n" + endedBy + " wins!",
+                                      "Game ended", JOptionPane.INFORMATION_MESSAGE);
+
+        // TODO: Close connection
+    }
+
+    public void gameEndedUnexpectedly(String reason) {
+        // Disable all buttons
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                buttons[row][col].setEnabled(false);
+            }
+        }
+
+        // Show dialog
+        JOptionPane.showMessageDialog(this,
+                                      "Game ended unexpectedly:\n\n" + reason,
+                                      "Game ended unexpectedly", JOptionPane.ERROR_MESSAGE);
+
+        // TODO: Close connection
     }
 }
