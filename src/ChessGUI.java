@@ -27,7 +27,7 @@ class ChessGUI extends JFrame {
          * @param coords Coordinates of the pawn
          * @param color  Color of the pawn
          */
-        PawnPromotionDialog(Coordinates coords, ChessEngine.ChessColorType color) {
+        PawnPromotionDialog(Coordinates coords, ChessColorType color) {
             super(ChessGUI.this, "Promote Pawn");
 
             this.setLayout(new GridLayout(2, 1));
@@ -37,39 +37,39 @@ class ChessGUI extends JFrame {
                 Dimension ButtonSize = new Dimension(50, 50);
 
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColorType.Black) ? "♛" : "♕");
+                    setText((color == ChessColorType.Black) ? "♛" : "♕");
                     setToolTipText("Queen");
                     setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessColorType.Black ? colorBlack : colorWhite);
 
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Queen);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColorType.Black) ? "♜" : "♖");
+                    setText((color == ChessColorType.Black) ? "♜" : "♖");
                     setToolTipText("Rook");
                     setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Rook);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColorType.Black) ? "♞" : "♘");
+                    setText((color == ChessColorType.Black) ? "♞" : "♘");
                     setToolTipText("Knight");
                     setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Knight);
                 }});
                 this.add(new JButton() {{
-                    setText((color == ChessEngine.ChessColorType.Black) ? "♝" : "♗");
+                    setText((color == ChessColorType.Black) ? "♝" : "♗");
                     setToolTipText("Bishop");
                     setFont(fontButton);
                     setPreferredSize(ButtonSize);
-                    setForeground(color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
+                    setForeground(color == ChessColorType.Black ? colorBlack : colorWhite);
 
                     addActionListener(l -> result = PawnPromotionDialogResponse.Bishop);
                 }});
@@ -280,7 +280,9 @@ class ChessGUI extends JFrame {
 
         JMenuItem aboutGame = new JMenuItem("About");
         aboutGame.addActionListener(l -> JOptionPane.showMessageDialog(
-            this, "Online Chess Game\n\nTerm project for Java Programming Lab @ SKKU\n(c) 2021 Hyunsoo Kim",
+            this, "Online Chess Game\nTerm project for Java Programming Lab @ SKKU\n\n"
+                  + "License: GPL-3.0-only\n\n"
+                  + "Chess Icons from 'GNOME Chess', GPL-3.0\n\n(c) 2021 Hyunsoo Kim",
             "About Online Chess", JOptionPane.INFORMATION_MESSAGE
         ));
 
@@ -345,7 +347,7 @@ class ChessGUI extends JFrame {
         JButton btn = buttons[piece.pos.row][piece.pos.col];
 
         btn.setText(piece.icon);
-        btn.setForeground(piece.color == ChessEngine.ChessColorType.Black ? colorBlack : colorWhite);
+        btn.setForeground(piece.color == ChessColorType.Black ? colorBlack : colorWhite);
     }
 
     /**
@@ -432,7 +434,7 @@ class ChessGUI extends JFrame {
         labelTurnCountIndicator.setText(chessEngine.currentTurnColor.toString() + " Turn");
     }
 
-    public void gameEnded(ChessEngine.ChessColorType endedBy) {
+    public void gameEnded(ChessColorType endedBy) {
         // Disable all buttons
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {

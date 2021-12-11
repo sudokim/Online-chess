@@ -5,15 +5,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ChessEngine {
-
-    enum ChessColorType {
-        White, Black
-    }
-
-    enum ChessPieceType {
-        Rook, Knight, Bishop, Queen, King, Pawn
-    }
-
     // Chess GUI
     public ChessGUI GUI = new ChessGUI(this);
 
@@ -185,6 +176,7 @@ public class ChessEngine {
         public  ChessColorType color;
         public  Coordinates    pos;
         public  String         icon;
+        public  ChessPieceType type;
         public  boolean        hasMoved = false;
         private int            id;  // Unique id given by the start position
 
@@ -259,6 +251,7 @@ public class ChessEngine {
         Rook(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♜" : "♖");
+            this.type = ChessPieceType.Rook;
         }
 
         @Override
@@ -290,6 +283,7 @@ public class ChessEngine {
         Knight(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♞" : "♘");
+            this.type = ChessPieceType.Knight;
         }
 
         @Override
@@ -302,6 +296,7 @@ public class ChessEngine {
         Bishop(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♝" : "♗");
+            this.type = ChessPieceType.Bishop;
         }
 
         @Override
@@ -321,6 +316,7 @@ public class ChessEngine {
         Queen(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♛" : "♕");
+            this.type = ChessPieceType.Queen;
         }
 
         @Override
@@ -356,6 +352,7 @@ public class ChessEngine {
         King(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♚" : "♔");
+            this.type = ChessPieceType.Queen;
         }
 
         @Override
@@ -368,6 +365,7 @@ public class ChessEngine {
         Pawn(ChessColorType color, Coordinates pos) {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♟" : "♙");
+            this.type = ChessPieceType.Pawn;
         }
 
         private boolean isWithinRangeAndEmpty(Coordinates coords) {
