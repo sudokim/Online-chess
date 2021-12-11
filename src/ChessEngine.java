@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -7,6 +8,9 @@ import java.util.stream.Collectors;
 public class ChessEngine {
     // Chess GUI
     public ChessGUI GUI = new ChessGUI(this);
+
+    // Chess logger
+    public ChessLogger logger = new ChessLogger();
 
     // Variables
     public ChessColorType currentTurnColor;
@@ -25,6 +29,7 @@ public class ChessEngine {
     public Map<Coordinates, Piece> pieces;
 
 
+    // Start new game
     public void newLocalGame() {
         initBoard();
 
@@ -36,6 +41,10 @@ public class ChessEngine {
 
         GUI.enableButtonsForCurrentTurn();
         GUI.updateGameStatusLabels();
+    }
+
+    public void newOnlineGame() {
+
     }
 
 
@@ -55,7 +64,7 @@ public class ChessEngine {
 
         GUI.clearPieces();
         for (Piece piece : pieces.values()) {
-            GUI.addPiece(piece);
+            GUI.updatePiece(piece);
         }
     }
 
@@ -138,19 +147,62 @@ public class ChessEngine {
         Piece srcPiece  = pieces.get(src);
         Piece destPiece = pieces.get(dest);
 
+        // King dead - game over
         if ((destPiece == blackKing) || (destPiece == whiteKing)) {
-            // King dead
             isGameRunning = false;
             GUI.gameEnded(currentTurnColor);
             return;
         }
 
+        // Move piece by changing key for the piece
         srcPiece.hasMoved = true;
         srcPiece.pos      = dest;
 
-        if (dest != null) pieces.remove(dest);
+        if (destPiece != null) {
+            // Piece caught
+            logger.addMove(currentTurnCount, src, dest, srcPiece, destPiece);
+            pieces.remove(dest);
+        } else {
+            // Piece not caught
+            logger.addMove(currentTurnCount, src, dest, srcPiece);
+        }
+
         pieces.put(dest, srcPiece);
         pieces.remove(src);
+
+        // Promote pawn if conditions met
+        if (srcPiece.type == ChessPieceType.Pawn) {
+            if (((Pawn) srcPiece).isPromotable()) {
+                ChessGUI.PawnPromotionDialog dialog = new ChessGUI.PawnPromotionDialog(GUI, srcPiece.pos, srcPiece.color);
+                ChessPieceType               result = dialog.showDialog();
+
+                Piece newPiece;
+                switch (result) {
+                    case Bishop:
+                        newPiece = new Bishop(srcPiece.color, srcPiece.pos);
+                        break;
+                    case Queen:
+                        newPiece = new Queen(srcPiece.color, srcPiece.pos);
+                        break;
+                    case Rook:
+                        newPiece = new Rook(srcPiece.color, srcPiece.pos);
+                        break;
+                    case Knight:
+                        newPiece = new Knight(srcPiece.color, srcPiece.pos);
+                        break;
+                    default:
+                        throw new RuntimeException("Unexpected promotion piece type " + result);
+                }
+
+                // TODO: Log promotion
+
+                pieces.remove(srcPiece.pos);
+                pieces.put(newPiece.pos, newPiece);
+
+                // Update button
+                GUI.updatePiece(newPiece);
+            }
+        }
     }
 
     private void switchTurn() {
@@ -172,13 +224,24 @@ public class ChessEngine {
     }
 
 
+    // Save-load file
+    public void saveGame(File gameFile) {
+
+    }
+
+    public void loadGame(File gameFile) {
+
+    }
+
+
+    // Pieces
     public abstract class Piece {
-        public  ChessColorType color;
-        public  Coordinates    pos;
-        public  String         icon;
-        public  ChessPieceType type;
-        public  boolean        hasMoved = false;
-        private int            id;  // Unique id given by the start position
+        public        ChessColorType color;
+        public        Coordinates    pos;
+        public        String         icon;
+        public        ChessPieceType type;
+        public        boolean        hasMoved = false;
+        private final int            id;  // Unique id given by the start position
 
         Piece(ChessColorType color, Coordinates pos) {
             this.color = color;
@@ -366,6 +429,12 @@ public class ChessEngine {
             super(color, pos);
             this.icon = (this.color == ChessColorType.Black ? "♟" : "♙");
             this.type = ChessPieceType.Pawn;
+        }
+
+        public boolean isPromotable() {
+            return this.color == ChessColorType.Black
+                   ? this.pos.row == 7
+                   : this.pos.row == 0;
         }
 
         private boolean isWithinRangeAndEmpty(Coordinates coords) {
