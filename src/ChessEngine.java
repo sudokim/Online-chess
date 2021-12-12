@@ -1,16 +1,28 @@
-import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ChessEngine {
+    // Game status for serialization
+    private class GameState implements Serializable {
+        public int                     turnCount;
+        public ChessColorType          turnColor;
+        public Map<Coordinates, Piece> pieces;
+        public ChessLogger             logger;
+
+        GameState(int turnCount, ChessColorType turnColor, Map<Coordinates, Piece> pieces, ChessLogger logger) {
+            this.turnCount = turnCount;
+            this.turnColor = turnColor;
+            this.pieces    = pieces;
+            this.logger    = logger;
+        }
+    }
+
     // Chess GUI
     public ChessGUI GUI = new ChessGUI(this);
 
     // Chess logger
-    public ChessLogger logger = new ChessLogger();
+    public ChessLogger logger;
 
     // Variables
     public ChessColorType currentTurnColor;
@@ -22,8 +34,8 @@ public class ChessEngine {
     public Piece            selectedPiece;
     public Set<Coordinates> possibleDestinations;
 
-    King whiteKing;
-    King blackKing;
+    private King whiteKing;
+    private King blackKing;
 
     // Map of pieces
     public Map<Coordinates, Piece> pieces;
@@ -53,6 +65,7 @@ public class ChessEngine {
      */
     private void initBoard() {
         pieces = new HashMap<>(33);
+        logger = new ChessLogger();
 
         // Black
         initFirstRow(ChessColorType.Black, 0);
@@ -224,18 +237,77 @@ public class ChessEngine {
     }
 
 
-    // Save-load file
-    public void saveGame(File gameFile) {
+    /**
+     * Save game state
+     *
+     * @param gameFile File destination
+     * @return "" if successful, error message if unsuccessful
+     */
+    public String saveGame(File gameFile) {
+        try (FileOutputStream fos = new FileOutputStream(gameFile);
+             BufferedOutputStream bos = new BufferedOutputStream(fos);
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
 
+//            oos.writeObject(new GameState(currentTurnCount, currentTurnColor, pieces, logger));
+            oos.writeObject(currentTurnCount);
+            oos.writeObject(currentTurnColor);
+//            oos.writeObject(pieces);
+            oos.writeObject(logger);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+//            return e.getMessage();
+        }
+
+        return "";
     }
 
-    public void loadGame(File gameFile) {
+    /**
+     * Load game state
+     *
+     * @param gameFile File destination
+     * @return "" if successful, error message if unsuccessful
+     */
+    public String loadGame(File gameFile) {
+        int                               turnCount;
+        ChessColorType                    turnColor;
+        Map<Coordinates, Piece>           pieces;
+        List<ChessLogger.ChessLoggerItem> logger;
 
+        try (FileInputStream fis = new FileInputStream(gameFile);
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+
+            turnCount = (int) ois.readObject();
+            turnColor = (ChessColorType) ois.readObject();
+
+
+        } catch (IOException | ClassNotFoundException e) {
+            return e.getMessage();
+        }
+
+        // Load new game state
+        GUI.clearPieces();
+
+//        for (Piece piece : gs.pieces.values()) {
+//            GUI.updatePiece(piece);
+//        }
+
+        this.currentTurnColor = turnColor;
+        this.currentTurnCount = turnCount;
+        this.isGameRunning    = true;
+        this.isOnlineGame     = false;
+        this.isPieceSelected  = false;
+
+        GUI.enableButtonsForCurrentTurn();
+        GUI.updateGameStatusLabels();
+
+        return "";
     }
 
 
     // Pieces
-    public abstract class Piece {
+    public abstract class Piece implements Serializable {
         public        ChessColorType color;
         public        Coordinates    pos;
         public        String         icon;
@@ -453,16 +525,22 @@ public class ChessEngine {
             // Vertical move
             if (color == ChessColorType.Black) {
                 // Move down
-                if (!hasMoved) {
-                    if (isWithinRangeAndEmpty(pos.add(2, 0))) result.add(pos.add(2, 0));
+                if (isWithinRangeAndEmpty(pos.add(1, 0))) {
+                    result.add(pos.add(1, 0));
+
+                    if (!hasMoved) {
+                        if (isWithinRangeAndEmpty(pos.add(2, 0))) result.add(pos.add(2, 0));
+                    }
                 }
-                if (isWithinRangeAndEmpty(pos.add(1, 0))) result.add(pos.add(1, 0));
             } else {
                 // Move up
-                if (!hasMoved) {
-                    if (isWithinRangeAndEmpty(pos.add(-2, 0))) result.add(pos.add(-2, 0));
+                if (isWithinRangeAndEmpty(pos.add(-1, 0))) {
+                    result.add(pos.add(-1, 0));
+
+                    if (!hasMoved) {
+                        if (isWithinRangeAndEmpty(pos.add(-2, 0))) result.add(pos.add(-2, 0));
+                    }
                 }
-                if (isWithinRangeAndEmpty(pos.add(-1, 0))) result.add(pos.add(-1, 0));
             }
 
             // Diagonal move

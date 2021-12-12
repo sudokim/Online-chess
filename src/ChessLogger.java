@@ -1,8 +1,8 @@
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +16,7 @@ public class ChessLogger {
     /**
      * Class for each item in logger
      */
-    private static class ChessLoggerItem {
+    public static class ChessLoggerItem {
 
         private final int               turn;
         private final Coordinates       src;
@@ -44,6 +44,7 @@ public class ChessLogger {
 
         /**
          * Get human-readable description of each log
+         *
          * @return Description
          */
         public String getDescription() {
@@ -60,6 +61,7 @@ public class ChessLogger {
 
         /**
          * Get notation for each moves
+         *
          * @return Notation
          */
         public String getNotation() {
@@ -77,13 +79,14 @@ public class ChessLogger {
     }
 
     // List of log items
-    private final List<ChessLoggerItem> logs = new ArrayList<>();
+    public final List<ChessLoggerItem> logs = new ArrayList<>();
 
     /**
      * Log a move
-     * @param turn Turn count
-     * @param src Source coordinates
-     * @param dest Destination coordinates
+     *
+     * @param turn       Turn count
+     * @param src        Source coordinates
+     * @param dest       Destination coordinates
      * @param movedPiece Moved piece
      */
     public void addMove(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece) {
@@ -92,10 +95,11 @@ public class ChessLogger {
 
     /**
      * Log a move where a piece is caught
-     * @param turn Turn count
-     * @param src Source coordinates
-     * @param dest Destination coordinates
-     * @param movedPiece Moved piece
+     *
+     * @param turn        Turn count
+     * @param src         Source coordinates
+     * @param dest        Destination coordinates
+     * @param movedPiece  Moved piece
      * @param caughtPiece Caught piece
      */
     public void addMove(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece, ChessEngine.Piece caughtPiece) {
@@ -104,33 +108,14 @@ public class ChessLogger {
 
     /**
      * Write log to file
-     * @param frame Chess GUI
+     *
+     * @param parent      Chess GUI
      * @param useNotation True to use chess notations, False to use human-readable notations
      */
-    private void writeLogToFile(JFrame frame, boolean useNotation) {
-        // Show a file selection dialog
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Select file destination...");
-        fc.setDialogType(JFileChooser.SAVE_DIALOG);
-        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fc.setFileFilter(new FileFilter() {
+    private void writeLogToFile(JFrame parent, boolean useNotation) {
+        File file = FileDialog.save(parent, "Save log file", "Text file (*.txt)", "txt");
 
-            @Override
-            public boolean accept(File f) {
-                return f.toPath().endsWith(".txt");
-            }
-            @Override
-            public String getDescription() {
-                return "Text file (*.txt)";
-            }
-        });
-
-        int uc = fc.showOpenDialog(frame);
-
-        // Valid file seleciton
-        if (uc == JFileChooser.APPROVE_OPTION) {
-            File file = fc.getSelectedFile();
-
+        if (file != null) {
             try {
                 // Write to file
                 PrintStream ps = new PrintStream(file);
@@ -142,7 +127,7 @@ public class ChessLogger {
                 ps.close();
 
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(frame, "Cannot write to the file!\n\n" + e.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parent, "Cannot write to the file!\n\n" + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

@@ -1,7 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class ChessGUI extends JFrame {
@@ -276,6 +278,57 @@ public class ChessGUI extends JFrame {
         });
         newOnlineGame.setName("NewOnlineGame");
 
+        JMenuItem saveGame = new JMenuItem("Save game...");
+        saveGame.addActionListener(l -> {
+            if (engine.isGameRunning) {
+                // Select destination
+                File destination = FileDialog.save(this, "Save game", "Chess game save file (*.jcg)", "jcg");
+
+                if (destination == null) return;
+
+                if (!destination.getAbsolutePath().endsWith(".jcg"))
+                    destination = new File(destination.getAbsolutePath() + ".jcg");
+
+                // Valid file destination
+                String result = engine.saveGame(destination);
+
+                if (Objects.equals(result, "")) {
+                    JOptionPane.showMessageDialog(this, "Successfully saved game.", "Save game", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Could not save game.\n\n" + result, "Save game", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        saveGame.setName("SaveGame");
+
+        JMenuItem loadGame = new JMenuItem("Load game...");
+        loadGame.addActionListener(l -> {
+            File source = FileDialog.open(this, "Load game", "Chess game save file (*.jcg)", "jcg");
+
+            if (source == null) return;
+
+            if (!source.canRead()) {
+                JOptionPane.showMessageDialog(this, "Unable to read save file!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (engine.isGameRunning) {
+                if (JOptionPane.showConfirmDialog(
+                    this, "Discard current game?", "Discard Game", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE
+                ) != 0) return;
+            }
+
+            // Valid file destination
+            String result = engine.loadGame(source);
+
+            if (Objects.equals(result, "")) {
+                JOptionPane.showMessageDialog(this, "Successfully loaded game.", "Load game", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Could not load game.\n\n" + result, "Load game", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        loadGame.setName("LoadGame");
+
         JMenuItem quitGame = new JMenuItem("Quit");
         quitGame.addActionListener(l -> {
             if (JOptionPane.showConfirmDialog(
@@ -286,6 +339,9 @@ public class ChessGUI extends JFrame {
         game.add(newLocalGame);
         game.add(newOnlineGame);
         game.add(new JSeparator());
+        game.add(saveGame);
+        game.add(loadGame);
+        game.add(new JSeparator());
         game.add(quitGame);
 
         JMenu help = new JMenu("Help");
@@ -293,8 +349,7 @@ public class ChessGUI extends JFrame {
         JMenuItem aboutGame = new JMenuItem("About");
         aboutGame.addActionListener(l -> JOptionPane.showMessageDialog(
             this, "Online Chess Game\nTerm project for Java Programming Lab @ SKKU\n\n"
-                  + "License: GPL-3.0-only\n\n"
-                  + "Chess Icons from 'GNOME Chess', GPL-3.0\n\n(c) 2021 Hyunsoo Kim",
+                  + "(c) 2021 Hyunsoo Kim",
             "About Online Chess", JOptionPane.INFORMATION_MESSAGE
         ));
 

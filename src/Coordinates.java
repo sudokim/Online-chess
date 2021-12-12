@@ -1,4 +1,6 @@
-public class Coordinates {
+import java.io.Serializable;
+
+public class Coordinates implements Serializable {
     int row, col;
 
     Coordinates() {
