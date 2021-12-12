@@ -161,6 +161,7 @@ public class ChessEngine {
         for (Piece piece : pieces.values()) {
             GUI.updatePiece(piece);
         }
+        GUI.disableAllButtons();
     }
 
     /**
@@ -332,6 +333,7 @@ public class ChessEngine {
             try {
                 os.write(response);
             } catch (IOException e) {
+                GUI.gameEndedUnexpectedly(e.getMessage());
                 e.printStackTrace();
             }
         }
