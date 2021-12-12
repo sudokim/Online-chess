@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * <p>
  * Moves are stored in memory, and then
  */
-public class ChessLogger implements Serializable {
+public class ChessLogger {
 
     ChessLogger(ArrayList<ChessLoggerItem> logs) {
         this.logs = logs;
@@ -25,28 +25,30 @@ public class ChessLogger implements Serializable {
      */
     public static class ChessLoggerItem implements Serializable {
 
-        private final int         turn;
-        private final Coordinates src;
-        private final Coordinates       dest;
-        private final Piece movedPiece;
-        private final Piece caughtPiece;
-        private       String            description;
-        private       String      notation;
+        private final int            turn;
+        private final Coordinates    src;
+        private final Coordinates    dest;
+        private final Piece          movedPiece;
+        private final Piece          caughtPiece;
+        private final ChessPieceType promotion;
+        private       String         description;
 
-        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece) {
+        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece, ChessPieceType promotionTo) {
             this.turn        = turn;
             this.src         = src;
             this.dest        = dest;
             this.movedPiece  = movedPiece;
             this.caughtPiece = null;
+            this.promotion   = promotionTo;
         }
 
-        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece) {
+        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece, ChessPieceType promotionTo) {
             this.turn        = turn;
             this.src         = src;
             this.dest        = dest;
             this.movedPiece  = movedPiece;
             this.caughtPiece = caughtPiece;
+            this.promotion   = promotionTo;
         }
 
         /**
@@ -60,33 +62,28 @@ public class ChessLogger implements Serializable {
                 description = "Turn " + turn + ": " + movedPiece.color + " " + movedPiece.type;
                 if (caughtPiece != null) {
                     description += " caught a " + caughtPiece.color + " " + caughtPiece.type + " at " + dest;
+                } else {
+                    description += " moved to " + dest;
+                }
+                if (promotion != null) {
+                    description += ", and was promoted to " + promotion;
                 }
             }
 
             return description;
         }
+    }
 
-        /**
-         * Get notation for each moves
-         *
-         * @return Notation
-         */
-        public String getNotation() {
-            if (notation == null) {
-                // Generate new notation string if empty
-                if (movedPiece.color == ChessColorType.White) {
-                    notation = "1. " + (movedPiece.type != ChessPieceType.Pawn ? movedPiece.type : "") + movedPiece.pos;
-                } else {
-                    notation = " " + (movedPiece.type != ChessPieceType.Pawn ? movedPiece.type : "") + movedPiece.pos + "\n";
-                }
-            }
+    public ArrayList<ChessLoggerItem> getLogs() {
+        return logs;
+    }
 
-            return notation;
-        }
+    public void addLog(ChessLoggerItem item) {
+        logs.add(item);
     }
 
     // List of log items
-    public ArrayList<ChessLoggerItem> logs;
+    private final ArrayList<ChessLoggerItem> logs;
 
     /**
      * Log a move
@@ -96,8 +93,11 @@ public class ChessLogger implements Serializable {
      * @param dest       Destination coordinates
      * @param movedPiece Moved piece
      */
-    public void addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece) {
-        logs.add(new ChessLoggerItem(turn, src, dest, movedPiece));
+    public ChessLoggerItem addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece, ChessPieceType promotionTo) {
+        ChessLoggerItem cli = new ChessLoggerItem(turn, src, dest, movedPiece, promotionTo);
+        logs.add(cli);
+
+        return cli;
     }
 
     /**
@@ -109,17 +109,19 @@ public class ChessLogger implements Serializable {
      * @param movedPiece  Moved piece
      * @param caughtPiece Caught piece
      */
-    public void addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece) {
-        logs.add(new ChessLoggerItem(turn, src, dest, movedPiece, caughtPiece));
+    public ChessLoggerItem addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece, ChessPieceType promotionTo) {
+        ChessLoggerItem cli = new ChessLoggerItem(turn, src, dest, movedPiece, caughtPiece, promotionTo);
+        logs.add(cli);
+
+        return cli;
     }
 
     /**
      * Write log to file
      *
      * @param parent      Chess GUI
-     * @param useNotation True to use chess notations, False to use human-readable notations
      */
-    private void writeLogToFile(JFrame parent, boolean useNotation) {
+    private void writeLogToFile(JFrame parent) {
         File file = FileDialog.save(parent, "Save log file", "Text file (*.txt)", "txt");
 
         if (file != null) {
@@ -128,7 +130,7 @@ public class ChessLogger implements Serializable {
                 PrintStream ps = new PrintStream(file);
 
                 for (ChessLoggerItem item : logs) {
-                    ps.print(useNotation ? item.getNotation() : item.getDescription());
+                    ps.print(item.getDescription());
                 }
 
                 ps.close();
@@ -138,8 +140,4 @@ public class ChessLogger implements Serializable {
             }
         }
     }
-}
-
-class ChessLogShowerGUI extends JFrame {
-
 }

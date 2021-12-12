@@ -5,6 +5,8 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 public class ChessGUI extends JFrame {
 
@@ -102,40 +104,24 @@ public class ChessGUI extends JFrame {
         }
     }
 
-    /**
-     * SwingWorker for make GUI not hang while waiting for the opponent to make a move
-     */
-    public class WaitOpponent extends SwingWorker<String, Integer> {
-
-        @Override
-        protected String doInBackground() throws Exception {
-            return null;
-        }
-
-        WaitOpponent() {
-
-        }
-    }
-
     // Constants
 
     // Color for pieces
-    private final static Color     colorBlack            = new Color(21, 21, 21);
-    private final static Color     colorWhite            = new Color(225, 225, 225);
-    private final static Color     colorDestinations     = new Color(90, 109, 126);
+    private final static Color     colorBlack         = new Color(21, 21, 21);
+    private final static Color     colorWhite         = new Color(225, 225, 225);
+    private final static Color     colorDestinations  = new Color(90, 109, 126);
     // Size of button
-    private final static Dimension sizeButton            = new Dimension(50, 50);
+    private final static Dimension sizeButton         = new Dimension(50, 50);
     // Font size of button
-    private final static int       sizeButtonFont        = 30;
+    private final static int       sizeButtonFont     = 30;
     // Size of window
-    private final static Dimension sizeWindow            = new Dimension(520, 550);
+    private final static Dimension sizeWindow         = new Dimension(520, 580);
     // Size of labels
-    private final static Dimension sizeIndicatorLabel    = new Dimension(100, 20);
-    private final static Dimension sizeNumberLabel       = new Dimension(20, 50);
-    private final static Dimension sizeAlphabetLabel     = new Dimension(50, 20);
-    private final static Dimension sizePopupMessageLabel = new Dimension(500, 20);
-    private final static Font      fontButton            = new Font(Font.MONOSPACED, Font.PLAIN, 36);
-    private final static Font      fontPopupMessageTitle = new Font(Font.DIALOG, Font.BOLD, 18);
+    private final static Dimension sizeIndicatorLabel = new Dimension(100, 20);
+    private final static Dimension opponentLabel      = new Dimension(200, 20);
+    private final static Dimension sizeNumberLabel    = new Dimension(20, 50);
+    private final static Dimension sizeAlphabetLabel  = new Dimension(50, 20);
+    private final static Font      fontButton         = new Font(Font.MONOSPACED, Font.PLAIN, 36);
 
     // Variables
 
@@ -143,37 +129,44 @@ public class ChessGUI extends JFrame {
     private final ChessEngine      engine;
     // Main panel
     private final JPanel           panelMain               = new JPanel(new GridBagLayout());
+    // Opponent indicator
+    private final JLabel           labelOpponent           = new JLabel();
+    // Opponent wait indicator
+    private final JLabel           labelWaitOpponent       = new JLabel();
     // Turn indicator
     private final JLabel           labelTurnColorIndicator = new JLabel();
     // Turn count indicator
     private final JLabel           labelTurnCountIndicator = new JLabel();
-    // Popup message title and body
-    private final JLabel           labelPopupMessageTitle  = new JLabel();
-    private final JLabel           labelPopupMessageBody   = new JLabel();
     // Array of buttons
     private final JButton[][]      buttons                 = new JButton[8][8];
     // Activated buttons for destinations
     private final Set<Coordinates> activatedDestinations   = new HashSet<>();
 
 
-    ChessGUI(ChessEngine game) {
-
-        engine = game;
+    ChessGUI(ChessEngine engine) {
+        this.engine = engine;
 
         // Draw board
+        labelOpponent.setPreferredSize(new Dimension(opponentLabel));
+        labelOpponent.setHorizontalAlignment(SwingConstants.LEFT);
+        labelWaitOpponent.setPreferredSize(new Dimension(opponentLabel));
+        labelWaitOpponent.setHorizontalAlignment(SwingConstants.RIGHT);
+        hideWaitMessage();
         labelTurnColorIndicator.setPreferredSize(new Dimension(sizeIndicatorLabel));
         labelTurnColorIndicator.setHorizontalAlignment(SwingConstants.LEFT);
         labelTurnCountIndicator.setPreferredSize(new Dimension(sizeIndicatorLabel));
         labelTurnCountIndicator.setHorizontalAlignment(SwingConstants.RIGHT);
 
         // Add panels to grid
-        addComponentToGrid(labelTurnColorIndicator, 0, 0, 3, 1);
-        addComponentToGrid(labelTurnCountIndicator, 6, 0, 3, 1);
-        addComponentToGrid(addNumberLabels(), 0, 2, 1, 8);
-        addComponentToGrid(addAlphabetLabels(), 1, 1, 8, 1);
-        addComponentToGrid(addPieceButtons(), 1, 2, 8, 8);
-        addComponentToGrid(addAlphabetLabels(), 1, 10, 8, 1);
-        addComponentToGrid(addNumberLabels(), 9, 2, 1, 8);
+        addComponentToGrid(labelOpponent, 0, 0, 3, 1);
+        addComponentToGrid(labelWaitOpponent, 0, 1, 4, 1);
+        addComponentToGrid(labelTurnColorIndicator, 0, 2, 3, 1);
+        addComponentToGrid(labelTurnCountIndicator, 6, 2, 3, 1);
+        addComponentToGrid(addNumberLabels(), 0, 4, 1, 8);
+        addComponentToGrid(addAlphabetLabels(), 1, 3, 8, 1);
+        addComponentToGrid(addPieceButtons(), 1, 4, 8, 8);
+        addComponentToGrid(addAlphabetLabels(), 1, 12, 8, 1);
+        addComponentToGrid(addNumberLabels(), 9, 4, 1, 8);
 
         // Window settings
         panelMain.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -272,11 +265,13 @@ public class ChessGUI extends JFrame {
         });
         newLocalGame.setName("NewLocalGame");
 
-        JMenuItem newOnlineGame = new JMenuItem("New online game...");
-        newOnlineGame.addActionListener(l -> {
+        JMenuItem hostOnlineGame = new JMenuItem("Host an online game...");
+        hostOnlineGame.addActionListener(l -> hostOnlineGame());
+        hostOnlineGame.setName("HostOnlineGame");
 
-        });
-        newOnlineGame.setName("NewOnlineGame");
+        JMenuItem joinOnlineGame = new JMenuItem("Join an online game...");
+        joinOnlineGame.addActionListener(l -> joinOnlineGame());
+        joinOnlineGame.setName("JoinOnlineGame");
 
         JMenuItem saveGame = new JMenuItem("Save game...");
         saveGame.addActionListener(l -> {
@@ -337,7 +332,8 @@ public class ChessGUI extends JFrame {
         });
 
         game.add(newLocalGame);
-        game.add(newOnlineGame);
+        game.add(hostOnlineGame);
+        game.add(joinOnlineGame);
         game.add(new JSeparator());
         game.add(saveGame);
         game.add(loadGame);
@@ -386,7 +382,19 @@ public class ChessGUI extends JFrame {
         engine.selectPiece((Coordinates) ((JButton) l.getSource()).getClientProperty("pos"));
     }
 
+    public void setOpponentLabelText(String text) {
+        labelOpponent.setText(text);
+    }
+
     // Manipulate board
+
+    public void showWaitMessage() {
+        labelWaitOpponent.setText("Waiting for opponent to move...");
+    }
+
+    public void hideWaitMessage() {
+        labelWaitOpponent.setText("");
+    }
 
     /**
      * Clear all pieces on board
@@ -464,6 +472,15 @@ public class ChessGUI extends JFrame {
     }
 
     /**
+     * Disable all buttons
+     */
+    public void disableAllButtons() {
+        for (int row = 0; row < 8; row++)
+            for (int col = 0; col < 8; col++)
+                 buttons[row][col].setEnabled(false);
+    }
+
+    /**
      * Move a piece on board
      *
      * @param src  Coordinates of the piece to move
@@ -484,10 +501,10 @@ public class ChessGUI extends JFrame {
     /**
      * Remove a piece from board
      *
-     * @param piece A piece to remove
+     * @param coords coordinates of button to remove
      */
-    public void removePiece(Piece piece) {
-        JButton btn = buttons[piece.pos.row][piece.pos.col];
+    public void removePiece(Coordinates coords) {
+        JButton btn = buttons[coords.row][coords.col];
 
         btn.setText("");
         btn.setEnabled(false);
@@ -508,11 +525,7 @@ public class ChessGUI extends JFrame {
      */
     public void gameEnded(ChessColorType endedBy) {
         // Disable all buttons
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                buttons[row][col].setEnabled(false);
-            }
-        }
+        disableAllButtons();
 
         // Show dialog
         JOptionPane.showMessageDialog(this,
@@ -531,11 +544,7 @@ public class ChessGUI extends JFrame {
      */
     public void gameEndedUnexpectedly(String reason) {
         // Disable all buttons
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                buttons[row][col].setEnabled(false);
-            }
-        }
+        disableAllButtons();
 
         // Show dialog
         JOptionPane.showMessageDialog(this,
@@ -543,5 +552,159 @@ public class ChessGUI extends JFrame {
                                       "Game ended unexpectedly", JOptionPane.ERROR_MESSAGE);
 
         // TODO: Close connection
+    }
+
+    /**
+     * Host an online game
+     */
+    private void hostOnlineGame() {
+        String portInput = (String) JOptionPane.showInputDialog(this, "Enter port (default: 5000):", "Host an online game", JOptionPane.QUESTION_MESSAGE, null, null, "5000");
+        if (portInput == null || portInput.equals("")) return;
+
+        int port;
+
+        try {
+            port = Integer.parseInt(portInput);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid port " + portInput, "Host an online game", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Valid hostname/port
+
+        // Wait dialog
+        JDialog dialog = new JDialog(ChessGUI.this, "Waiting for connection...", true);
+        JPanel  panel  = new JPanel(new GridLayout(2, 1));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.add(new JLabel("Waiting for a new connection at port " + port));
+        JButton cancelButton = new JButton("Cancel");
+        panel.add(cancelButton);
+
+        dialog.add(panel);
+        dialog.pack();
+        dialog.setResizable(false);
+        dialog.setLocationRelativeTo(ChessGUI.this);
+        dialog.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+        SwingWorker<String, Integer> sw = new SwingWorker<>() {
+
+            @Override
+            protected String doInBackground() {
+                return engine.hostOnlineGame(port);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String result = get();
+
+                    if (result != null) {
+                        JOptionPane.showMessageDialog(ChessGUI.this, "Error while joining game\n\n" + result, "Host an online game", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        // Successful connection
+                        System.out.println("CONNECTED Host");
+                        dialog.dispose();
+                        engine.onlineGameStart();
+                    }
+
+                } catch (InterruptedException | CancellationException ignored) {
+                    System.out.println("Cancelled");
+
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        cancelButton.addActionListener(l -> {
+            sw.cancel(true);
+            dispose();
+        });
+        sw.execute();
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Join an online game
+     */
+    private void joinOnlineGame() {
+        // Get user input for address and port
+        String hostname = JOptionPane.showInputDialog(this, "Enter the address of the host:", "Join an online game", JOptionPane.QUESTION_MESSAGE);
+
+        if (hostname != null && !hostname.equals("")) {
+            String portInput = (String) JOptionPane.showInputDialog(this, "Enter port (default: 5000):", "Join an online game", JOptionPane.QUESTION_MESSAGE, null, null, "5000");
+
+            if (portInput != null && !portInput.equals("")) {
+                int port;
+
+                try {
+                    port = Integer.parseInt(portInput);
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Invalid port " + portInput, "Join an online game", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Valid hostname/port
+
+                // Setup dialog
+                JDialog dialog = new JDialog(ChessGUI.this, "Waiting for host...", true);
+                JPanel  panel  = new JPanel(new GridLayout(2, 1));
+                panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                panel.add(new JLabel("Waiting for " + hostname + ":" + port));
+                JButton cancelButton = new JButton("Cancel");
+                panel.add(cancelButton);
+
+                dialog.add(panel);
+                dialog.pack();
+                dialog.setResizable(false);
+                dialog.setLocationRelativeTo(ChessGUI.this);
+                dialog.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+                // Swingworker waiting for connection
+                SwingWorker<String, Integer> sw = new SwingWorker<>() {
+
+                    @Override
+                    protected String doInBackground() {
+                        return engine.joinOnlineGame(hostname, port);
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            String result = get();
+
+                            if (result != null) {
+                                JOptionPane.showMessageDialog(ChessGUI.this, "Error while joining game\n\n" + result, "Join an online game", JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                // Successful connection
+                                System.out.println("CONNECTED Client");
+                            }
+                            dialog.dispose();
+                            engine.onlineGameStart();
+
+                        } catch (InterruptedException ignored) {
+
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                };
+
+                cancelButton.addActionListener(l -> {
+                    sw.cancel(true);
+                    dispose();
+                });
+                sw.execute();
+                dialog.setVisible(true);
+            }
+        }
+    }
+
+    /**
+     * Show a information dialog
+     */
+    public void connectionEstablishedDialog(ChessColorType color) {
+        JOptionPane.showMessageDialog(this, "Connection established!\n\nYour color is " + color + ".", "Connected", JOptionPane.INFORMATION_MESSAGE);
     }
 }

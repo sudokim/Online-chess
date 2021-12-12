@@ -1,5 +1,8 @@
 import java.io.Serializable;
 
+/**
+ * Coordinates for pieces
+ */
 public class Coordinates implements Serializable {
     int row, col;
 
