@@ -2,7 +2,6 @@ import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -11,9 +10,6 @@ import java.util.concurrent.ExecutionException;
 public class ChessEngine {
     // Chess GUI
     public ChessGUI GUI = new ChessGUI(this);
-
-    // Chess logger
-    public ChessLogger logger;
 
     // Variables
     public ChessColorType currentTurnColor;
@@ -149,7 +145,6 @@ public class ChessEngine {
      */
     private void initBoard() {
         pieces               = new HashMap<>(33);
-        logger               = new ChessLogger();
         selectedPiece        = null;
         possibleDestinations = null;
 
@@ -264,7 +259,6 @@ public class ChessEngine {
      */
     private void movePiece(Coordinates src, Coordinates dest) {
         byte[]         response    = new byte[6];
-        ChessPieceType promotionTo = null;  // Not null if Pawn promoted
         Piece          srcPiece    = pieces.get(src);
         Piece          destPiece   = pieces.get(dest);
 
@@ -287,7 +281,6 @@ public class ChessEngine {
                 if (((Pawn) srcPiece).isPromotable()) {
                     ChessGUI.PawnPromotionDialog dialog = new ChessGUI.PawnPromotionDialog(GUI, srcPiece.pos, srcPiece.color);
                     ChessPieceType               result = dialog.showDialog();
-                    promotionTo = result;
 
                     Piece newPiece;
                     switch (result) {
@@ -311,6 +304,7 @@ public class ChessEngine {
                             throw new RuntimeException("Unexpected promotion piece type " + result);
                     }
 
+                    newPiece.id = srcPiece.id;
                     pieces.remove(srcPiece.pos);
                     pieces.put(newPiece.pos, newPiece);
 
@@ -322,16 +316,6 @@ public class ChessEngine {
                 response[5] = 0;
             }
             response[4] = 0;
-        }
-
-        // Log move
-        if (destPiece != null) {
-            // Piece caught
-            logger.addMove(currentTurnCount, src, dest, srcPiece, destPiece, promotionTo);
-            pieces.remove(dest);
-        } else {
-            // Piece not caught
-            logger.addMove(currentTurnCount, src, dest, srcPiece, promotionTo);
         }
 
         response[0] = (byte) src.row;
@@ -425,7 +409,7 @@ public class ChessEngine {
 
                         // Make move based on answer
                         Piece srcPiece = pieces.get(src);
-                        Piece newPiece;
+                        Piece newPiece = null;
                         pieces.remove(src);
                         pieces.remove(dest);
 
@@ -465,6 +449,8 @@ public class ChessEngine {
                         }
 
                         // Update buttons
+                        if (newPiece != null)
+                            newPiece.id = srcPiece.id;
                         GUI.removePiece(src);
                         GUI.updatePiece(pieces.get(dest));
 
@@ -528,11 +514,6 @@ public class ChessEngine {
                 oos.writeObject(value);
             }
 
-            oos.writeInt(logger.getLogs().size());
-            for (ChessLogger.ChessLoggerItem item : logger.getLogs()) {
-                oos.writeObject(item);
-            }
-
         } catch (IOException e) {
             return e.getMessage();
         }
@@ -549,9 +530,8 @@ public class ChessEngine {
     public String loadGame(File gameFile) {
         int                                    turnCount;
         ChessColorType                         turnColor;
-        int                                    piecesSize, logSize;
+        int                                    piecesSize;
         HashMap<Coordinates, Piece>            pieces;
-        ArrayList<ChessLogger.ChessLoggerItem> logs;
 
         Coordinates newPieceCoords;
         Piece       newPiece;
@@ -576,12 +556,6 @@ public class ChessEngine {
                 pieces.put(newPieceCoords, newPiece);
             }
 
-            logSize = ois.readInt();
-            logs    = new ArrayList<>(logSize);
-            for (int i = 0; i < logSize; i++) {
-                logs.add((ChessLogger.ChessLoggerItem) ois.readObject());
-            }
-
         } catch (IOException | ClassNotFoundException e) {
             return e.getMessage();
         }
@@ -601,7 +575,6 @@ public class ChessEngine {
             GUI.updatePiece(piece);
         }
 
-        this.logger           = new ChessLogger(logs);
         this.currentTurnColor = turnColor;
         this.currentTurnCount = turnCount;
         this.isGameRunning    = true;

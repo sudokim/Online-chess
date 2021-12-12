@@ -121,7 +121,6 @@ public class ChessGUI extends JFrame {
     private final static Dimension opponentLabel      = new Dimension(200, 20);
     private final static Dimension sizeNumberLabel    = new Dimension(20, 50);
     private final static Dimension sizeAlphabetLabel  = new Dimension(50, 20);
-    private final static Font      fontButton         = new Font(Font.MONOSPACED, Font.PLAIN, 36);
 
     // Variables
 
@@ -702,7 +701,7 @@ public class ChessGUI extends JFrame {
     }
 
     /**
-     * Show a information dialog
+     * Show an information dialog
      */
     public void connectionEstablishedDialog(ChessColorType color) {
         JOptionPane.showMessageDialog(this, "Connection established!\n\nYour color is " + color + ".", "Connected", JOptionPane.INFORMATION_MESSAGE);

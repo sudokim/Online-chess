@@ -12,8 +12,8 @@ abstract class Piece implements Serializable {
     protected           Coordinates                 pos;
     protected           String                      icon;
     protected           ChessPieceType              type;
-    protected           boolean                     hasMoved = false;
-    protected final     int                         id;  // Unique id given by the start position
+    protected boolean hasMoved = false;
+    protected int     id;  // Unique id given by the start position
 
     Piece(HashMap<Coordinates, Piece> pieces, ChessColorType color, Coordinates pos) {
         this.pieces = pieces;

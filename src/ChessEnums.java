@@ -7,7 +7,3 @@ enum ChessColorType implements Serializable {
 enum ChessPieceType implements Serializable{
     Rook, Knight, Bishop, Queen, King, Pawn
 }
-
-enum ChessMoveType {
-
-}
