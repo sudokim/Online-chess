@@ -4,29 +4,36 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Logs chess moves
  * <p>
  * Moves are stored in memory, and then
  */
-public class ChessLogger {
+public class ChessLogger implements Serializable {
+
+    ChessLogger(ArrayList<ChessLoggerItem> logs) {
+        this.logs = logs;
+    }
+
+    ChessLogger() {
+        this.logs = new ArrayList<>();
+    }
 
     /**
      * Class for each item in logger
      */
-    public static class ChessLoggerItem {
+    public static class ChessLoggerItem implements Serializable {
 
-        private final int               turn;
-        private final Coordinates       src;
+        private final int         turn;
+        private final Coordinates src;
         private final Coordinates       dest;
-        private final ChessEngine.Piece movedPiece;
-        private final ChessEngine.Piece caughtPiece;
+        private final Piece movedPiece;
+        private final Piece caughtPiece;
         private       String            description;
-        private       String            notation;
+        private       String      notation;
 
-        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece) {
+        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece) {
             this.turn        = turn;
             this.src         = src;
             this.dest        = dest;
@@ -34,7 +41,7 @@ public class ChessLogger {
             this.caughtPiece = null;
         }
 
-        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece, ChessEngine.Piece caughtPiece) {
+        ChessLoggerItem(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece) {
             this.turn        = turn;
             this.src         = src;
             this.dest        = dest;
@@ -79,7 +86,7 @@ public class ChessLogger {
     }
 
     // List of log items
-    public final List<ChessLoggerItem> logs = new ArrayList<>();
+    public ArrayList<ChessLoggerItem> logs;
 
     /**
      * Log a move
@@ -89,7 +96,7 @@ public class ChessLogger {
      * @param dest       Destination coordinates
      * @param movedPiece Moved piece
      */
-    public void addMove(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece) {
+    public void addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece) {
         logs.add(new ChessLoggerItem(turn, src, dest, movedPiece));
     }
 
@@ -102,7 +109,7 @@ public class ChessLogger {
      * @param movedPiece  Moved piece
      * @param caughtPiece Caught piece
      */
-    public void addMove(int turn, Coordinates src, Coordinates dest, ChessEngine.Piece movedPiece, ChessEngine.Piece caughtPiece) {
+    public void addMove(int turn, Coordinates src, Coordinates dest, Piece movedPiece, Piece caughtPiece) {
         logs.add(new ChessLoggerItem(turn, src, dest, movedPiece, caughtPiece));
     }
 

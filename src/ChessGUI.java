@@ -410,7 +410,7 @@ public class ChessGUI extends JFrame {
      *
      * @param piece A piece to add
      */
-    public void updatePiece(ChessEngine.Piece piece) {
+    public void updatePiece(Piece piece) {
         JButton btn = buttons[piece.pos.row][piece.pos.col];
 
         btn.setText(piece.icon);
@@ -486,7 +486,7 @@ public class ChessGUI extends JFrame {
      *
      * @param piece A piece to remove
      */
-    public void removePiece(ChessEngine.Piece piece) {
+    public void removePiece(Piece piece) {
         JButton btn = buttons[piece.pos.row][piece.pos.col];
 
         btn.setText("");

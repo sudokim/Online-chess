@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 
 class FileDialog {
@@ -8,18 +9,8 @@ class FileDialog {
         fc.setDialogTitle(title);
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fc.setFileFilter(new FileFilter() {
-
-            @Override
-            public boolean accept(File f) {
-                return f.toPath().endsWith("." + fileExtension);
-            }
-
-            @Override
-            public String getDescription() {
-                return fileTypeDescription;
-            }
-        });
+        fc.setAcceptAllFileFilterUsed(false);
+        fc.addChoosableFileFilter(new FileNameExtensionFilter(fileTypeDescription, fileExtension));
 
         int uc = fc.showSaveDialog(parent);
 
@@ -37,18 +28,8 @@ class FileDialog {
         fc.setDialogTitle(title);
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fc.setFileFilter(new FileFilter() {
-
-            @Override
-            public boolean accept(File f) {
-                return f.toPath().endsWith("." + fileExtension);
-            }
-
-            @Override
-            public String getDescription() {
-                return fileTypeDescription;
-            }
-        });
+        fc.setAcceptAllFileFilterUsed(false);
+        fc.addChoosableFileFilter(new FileNameExtensionFilter(fileTypeDescription, fileExtension));
 
         int uc = fc.showOpenDialog(parent);
 
