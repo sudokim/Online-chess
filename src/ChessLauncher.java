@@ -1,4 +1,4 @@
-public class Main {
+public class ChessLauncher {
 
     public static void main(String[] args) {
         // Game launcher

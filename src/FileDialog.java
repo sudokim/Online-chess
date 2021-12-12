@@ -2,7 +2,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 
-class FileDialog {
+public class FileDialog {
     public static File save(JFrame parent, String title, String fileTypeDescription, String fileExtension) {
         JFileChooser fc = new JFileChooser();
         fc.setDialogTitle(title);
